@@ -1,0 +1,42 @@
+version: '2'
+services:
+    app:
+        build:
+            context: ./app
+            dockerfile: Dockerfile
+        volumes:
+            - ./app:/app
+            - ./data/nuget-cache:/root/.nuget/packages
+            - ./data/node_modules:/app/node_modules
+            - ./data/app/bin:/app/bin
+            - ./data/app/bin:/app/obj
+        depends_on:
+            - "postgres"
+        networks:
+            - back
+
+    postgres:
+        image: postgres:alpine
+        networks:
+            - back
+        environment:
+            POSTGRES_PASSWORD: password
+        volumes:
+            - ./data/postgres/data:/var/lib/postgresql/data      
+            - ./data/postgres/log:/var/log 
+
+    proxy:
+        image: nginx:1.11.5
+        restart: always
+        volumes:
+            - ./nginx.conf:/etc/nginx/nginx.conf
+        ports:
+            - "80:80"
+        depends_on:
+            - app    
+        networks:
+            back: 
+                aliases: 
+                    - "www.dotnet-sample.dev"
+networks:
+    back:
